@@ -1,0 +1,69 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+.env
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Data files
+data/pascal_voc/*
+data/medical/isic/*
+data/medical/brats/*
+!data/pascal_voc/.gitkeep
+!data/medical/isic/.gitkeep
+!data/medical/brats/.gitkeep
+
+# Model checkpoints and results
+results/*
+!results/.gitkeep
+*.pth
+*.pt
+*.h5
+*.pkl
+*.joblib
+
+# Logs
+logs/
+*.log
+wandb/
+tensorboard/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp

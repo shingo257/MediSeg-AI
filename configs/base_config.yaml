@@ -1,0 +1,38 @@
+# Base configuration for MediSeg.AI project
+
+# Data settings
+data:
+  batch_size: 16
+  num_workers: 4
+  image_size: [256, 256]
+  augmentation: true
+
+# Model settings
+model:
+  name: "unet"
+  num_classes: 1
+  in_channels: 3
+  pretrained: false
+
+# Training settings
+training:
+  epochs: 100
+  learning_rate: 0.001
+  weight_decay: 1e-4
+  scheduler: "cosine"
+  early_stopping:
+    patience: 10
+    min_delta: 0.001
+
+# Evaluation settings
+evaluation:
+  metrics: ["iou", "dice", "accuracy"]
+  save_predictions: true
+  visualize: true
+
+# Logging settings
+logging:
+  use_wandb: false  # TensorBoard問題のため無効化
+  use_tensorboard: false  # TensorBoard問題のため無効化
+  log_interval: 10
+  save_interval: 5

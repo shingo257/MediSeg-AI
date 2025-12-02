@@ -1,0 +1,53 @@
+# Configuration for ISIC medical image segmentation
+
+# Data settings
+data:
+  batch_size: 8
+  num_workers: 4
+  image_size: [256, 256]
+  augmentation: true
+  train_split: 0.8
+  val_split: 0.1
+
+# Model settings
+model:
+  name: "unet"
+  num_classes: 1
+  in_channels: 3
+  pretrained: false
+  bilinear: false
+
+# Training settings
+training:
+  epochs: 150
+  learning_rate: 0.0001
+  weight_decay: 1e-4
+  optimizer: "adam"
+  scheduler: "cosine"
+  loss: "combined"  # bce, dice, focal, combined
+  early_stopping:
+    patience: 20
+    min_delta: 0.001
+
+# Evaluation settings
+evaluation:
+  metrics: ["dice", "iou", "accuracy", "sensitivity", "specificity"]
+  save_predictions: true
+  visualize: true
+
+# Logging settings
+logging:
+  use_wandb: false  # TensorBoard問題のため無効化
+  use_tensorboard: false  # TensorBoard問題のため無効化
+  log_interval: 10
+  save_interval: 10
+
+# Medical image specific settings
+medical:
+  # ISIC specific settings
+  dataset: "isic"
+  lesion_type: "melanoma"
+  # Data augmentation for medical images
+  elastic_transform: true
+  grid_distortion: true
+  gamma_correction: true
