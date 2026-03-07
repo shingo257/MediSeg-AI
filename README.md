@@ -1,7 +1,6 @@
 # MediSeg.AI - 医用画像セグメンテーションAIプロジェクト
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/your-username/MediSeg-AI/blob/main/MediSeg_AI_Colab.ipynb)  
-※ バッジのリンクは `your-username` を実際の GitHub ユーザー名に置き換えてください。フォークした場合は自分のリポジトリURLを指定します。
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/shingo257/MediSeg-AI/blob/main/MediSeg_AI_Colab.ipynb)
 
 ## 1. プロジェクト概要
 
