@@ -28,15 +28,30 @@ dependencies = [
     "tqdm>=4.64.0",
     "tensorboard>=2.10.0",
     "wandb>=0.13.0",
+    "pydantic>=2.0.0",
 ]
 
 [project.optional-dependencies]
+gui-web = [
+    "Flask>=2.0.0",
+]
+gui-desktop = [
+    "PyQt5>=5.15.0",
+]
 dev = [
     "black>=22.0.0",
     "flake8>=4.0.0",
     "mypy>=0.950",
     "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
 ]
+
+[tool.setuptools]
+package-dir = {"" = "backend"}
+
+[tool.setuptools.packages.find]
+where = ["backend"]
+include = ["mediseg_ai*"]
 
 [tool.black]
 line-length = 88
@@ -49,7 +64,7 @@ warn_unused_configs = true
 disallow_untyped_defs = true
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["backend/tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]

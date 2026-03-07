@@ -27,6 +27,16 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 ```
 
+**uv を使う場合**（プロジェクトで uv を標準にしている場合）は、`uv run` の前に CUDA 版 PyTorch を入れます：
+
+```bash
+# CUDA 11.8 の場合
+uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
+# または CUDA 12.1 の場合
+uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+```
+
 ### 4. CUDA動作確認
 ```python
 import torch

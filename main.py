@@ -6,150 +6,17 @@ import os
 import sys
 import argparse
 import torch
-import yaml
 from pathlib import Path
+from typing import Any, Dict, Optional
 
-# Add src to path
-sys.path.append('src')
-
-from src.models.unet import UNet
-from src.data_loaders.pascal_voc import create_pascal_voc_dataloaders
-from src.training.trainer import SegmentationTrainer
-from src.evaluation.evaluate import ModelEvaluator
+from mediseg_ai.models.unet import UNet
+from mediseg_ai.config import get_default_isic_config
+from mediseg_ai.evaluation.runner import evaluate_model
+from mediseg_ai.training.runner import train_model
 
 
-def load_config(config_path: str) -> dict:
-    """Load configuration from YAML file"""
-    with open(config_path, 'r') as f:
-        config = yaml.safe_load(f)
-    return config
-
-
-def train_model(config_path: str, data_dir: str, save_dir: str):
-    """Train U-Net model on Pascal VOC dataset"""
-    print("=" * 60)
-    print("MediSeg.AI - Training U-Net on Pascal VOC 2012")
-    print("=" * 60)
-    
-    # Load configuration
-    config = load_config(config_path)
-    
-    # Set device
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"Using device: {device}")
-    
-    # Create model
-    model = UNet(
-        n_channels=config['model']['in_channels'],
-        n_classes=config['model']['num_classes'],
-        bilinear=config['model'].get('bilinear', False)
-    )
-    
-    print(f"Model created with {sum(p.numel() for p in model.parameters()):,} parameters")
-    
-    # Create data loaders
-    print("Creating data loaders...")
-    train_loader, val_loader = create_pascal_voc_dataloaders(
-        root_dir=data_dir,
-        batch_size=config['data']['batch_size'],
-        num_workers=config['data']['num_workers'],
-        image_size=tuple(config['data']['image_size'])
-    )
-    
-    print(f"Train samples: {len(train_loader.dataset)}")
-    print(f"Validation samples: {len(val_loader.dataset)}")
-    
-    # Create trainer
-    trainer = SegmentationTrainer(
-        model=model,
-        train_loader=train_loader,
-        val_loader=val_loader,
-        device=device,
-        config=config,
-        save_dir=save_dir
-    )
-    
-    # Start training
-    epochs = config['training']['epochs']
-    print(f"Starting training for {epochs} epochs...")
-    
-    summary = trainer.train(epochs)
-    
-    print("Training completed!")
-    print(f"Best Dice Score: {summary['best_dice']:.4f}")
-    print(f"Final Epoch: {summary['final_epoch']}")
-    
-    return summary
-
-
-def evaluate_model(model_path: str, data_dir: str, save_dir: str):
-    """Evaluate trained model"""
-    print("=" * 60)
-    print("MediSeg.AI - Evaluating Trained Model")
-    print("=" * 60)
-    
-    # Set device
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"Using device: {device}")
-    
-    # Load model
-    print(f"Loading model from: {model_path}")
-    checkpoint = torch.load(model_path, map_location=device)
-    config = checkpoint['config']
-    
-    model = UNet(
-        n_channels=config['model']['in_channels'],
-        n_classes=config['model']['num_classes'],
-        bilinear=config['model'].get('bilinear', False)
-    )
-    model.load_state_dict(checkpoint['model_state_dict'])
-    
-    print(f"Model loaded with {sum(p.numel() for p in model.parameters()):,} parameters")
-    
-    # Create test dataset
-    from src.data_loaders.pascal_voc import PascalVOCDataset, get_pascal_voc_transforms
-    
-    test_transform = get_pascal_voc_transforms(
-        image_size=tuple(config['data']['image_size']),
-        is_training=False
-    )
-    
-    test_dataset = PascalVOCDataset(
-        root_dir=data_dir,
-        split='test',
-        transform=test_transform
-    )
-    
-    test_loader = torch.utils.data.DataLoader(
-        test_dataset,
-        batch_size=config['data']['batch_size'],
-        shuffle=False,
-        num_workers=config['data']['num_workers'],
-        pin_memory=True
-    )
-    
-    print(f"Test samples: {len(test_dataset)}")
-    
-    # Create evaluator
-    evaluator = ModelEvaluator(
-        model=model,
-        test_loader=test_loader,
-        device=device,
-        save_dir=save_dir
-    )
-    
-    # Run evaluation
-    results = evaluator.evaluate()
-    
-    # Save results
-    evaluator.save_results(results)
-    
-    print("Evaluation completed!")
-    return results
-
-
-def demo_model():
-    """Demonstrate model with dummy data"""
+def demo_model() -> None:
+    """Demonstrate model with dummy data."""
     print("=" * 60)
     print("MediSeg.AI - Model Demonstration")
     print("=" * 60)
@@ -180,7 +47,7 @@ def demo_model():
     print(f"Output range: [{output.min():.4f}, {output.max():.4f}]")
     
     # Test metrics with more realistic dummy data
-    from src.evaluation.metrics import SegmentationMetrics
+    from mediseg_ai.evaluation.metrics import SegmentationMetrics
     
     # より現実的なダミーデータを生成
     # 予測値を0-1の範囲に正規化
@@ -213,73 +80,156 @@ def demo_model():
     print("Demo completed!")
 
 
-def main():
-    """Main function"""
-    parser = argparse.ArgumentParser(description='MediSeg.AI - Medical Image Segmentation')
-    parser.add_argument('--mode', type=str, 
-                       choices=['train', 'eval', 'demo', 'compare', 'train_medical', 'auto_dataset', 'real_datasets', 'gui'], 
-                       default='demo', help='Execution mode')
-    parser.add_argument('--config', type=str, default='configs/base_config.yaml',
-                       help='Path to configuration file')
-    parser.add_argument('--data_dir', type=str, default='data/pascal_voc',
-                       help='Path to dataset directory')
-    parser.add_argument('--save_dir', type=str, default='results',
-                       help='Directory to save results')
-    parser.add_argument('--model_path', type=str, default='results/best_model.pth',
-                       help='Path to trained model for evaluation')
-    parser.add_argument('--dataset', type=str, choices=['pascal_voc', 'isic'], 
-                       default='pascal_voc', help='Dataset to use')
-    
+def main() -> None:
+    """Main function (subcommand-based CLI)."""
+    from mediseg_ai.cli.base import command_registry
+    from mediseg_ai.cli.commands.train_command import TrainCommand
+    from mediseg_ai.cli.commands.eval_command import EvalCommand
+    from mediseg_ai.cli.commands.compare_command import CompareCommand
+    from mediseg_ai.training.compare_models import run as compare_run
+
+    command_registry.register("train", TrainCommand(runner=train_model))
+    command_registry.register(
+        "train-medical",
+        TrainCommand(runner=lambda c, d, s: train_model(c, d, s, get_default_isic_config(), "isic")),
+    )
+    command_registry.register("eval", EvalCommand(runner=evaluate_model))
+    command_registry.register("compare", CompareCommand(runner=compare_run))
+
+    parser = argparse.ArgumentParser(
+        description="MediSeg.AI - Medical Image Segmentation"
+    )
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    train_parser = subparsers.add_parser("train", help="Train on Pascal VOC")
+    command_registry.get("train").add_arguments(train_parser)
+
+    train_med_parser = subparsers.add_parser(
+        "train-medical", help="Train on a medical dataset (default: ISIC)"
+    )
+    train_med_parser.add_argument(
+        "--config", type=str, default="configs/isic_config.yaml", help="Config path"
+    )
+    train_med_parser.add_argument(
+        "--data-dir", type=str, default="data/medical/isic", help="Dataset directory"
+    )
+    train_med_parser.add_argument(
+        "--save-dir", type=str, default="results", help="Output directory"
+    )
+
+    eval_parser = subparsers.add_parser("eval", help="Evaluate a trained model")
+    command_registry.get("eval").add_arguments(eval_parser)
+
+    compare_parser = subparsers.add_parser("compare", help="Compare models")
+    command_registry.get("compare").add_arguments(compare_parser)
+
+    subparsers.add_parser("demo", help="Run a dummy forward/metrics demo")
+
+    # datasets
+    datasets_parser = subparsers.add_parser("datasets", help="Dataset demos")
+    datasets_parser.add_argument(
+        "kind", choices=["auto", "real"], help="Which dataset demo to run"
+    )
+
+    # gui
+    gui_parser = subparsers.add_parser("gui", help="Launch GUI")
+    gui_parser.add_argument(
+        "--type",
+        choices=["web", "desktop"],
+        default="web",
+        help="GUI type to launch",
+    )
+    gui_parser.add_argument("--host", type=str, default=None, help="Web GUI host")
+    gui_parser.add_argument("--port", type=int, default=None, help="Web GUI port")
+    gui_parser.add_argument("--debug", action="store_true", help="Enable debug mode")
+    gui_parser.add_argument(
+        "--no-browser",
+        action="store_true",
+        help="Do not auto-open browser for Web GUI",
+    )
+
     args = parser.parse_args()
-    
-    if args.mode == 'train':
-        from src.cli.commands.train_command import TrainCommand
-        TrainCommand.execute(args.config, args.data_dir, args.save_dir)
-    
-    elif args.mode == 'train_medical':
-        if not os.path.exists(args.data_dir):
-            print(f"Error: Data directory {args.data_dir} does not exist")
-            print("Please download ISIC dataset first")
+
+    if args.command == "train":
+        command_registry.execute(
+            "train",
+            config_path=args.config,
+            data_dir=args.data_dir,
+            save_dir=args.save_dir,
+        )
+        return
+
+    if args.command == "train-medical":
+        command_registry.execute(
+            "train-medical",
+            config_path=args.config,
+            data_dir=args.data_dir,
+            save_dir=args.save_dir,
+        )
+        return
+
+    if args.command == "eval":
+        command_registry.execute(
+            "eval",
+            model_path=args.model_path,
+            data_dir=args.data_dir,
+            save_dir=args.save_dir,
+        )
+        return
+
+    if args.command == "compare":
+        command_registry.execute(
+            "compare",
+            dataset=args.dataset,
+            data_dir=args.data_dir,
+            save_dir=args.save_dir,
+            batch_size=getattr(args, "batch_size", 8),
+        )
+        return
+
+    if args.command == "demo":
+        demo_model()
+        return
+
+    if args.command == "datasets":
+        if args.kind == "auto":
+            print("🚀 Auto Dataset Demo...")
+            from mediseg_ai.data_loaders.auto_dataset import demo_auto_dataset
+
+            demo_auto_dataset()
             return
-        
-        # Use medical config for ISIC dataset
-        config_path = 'configs/isic_config.yaml'
-        from src.cli.commands.train_command import TrainCommand
-        TrainCommand.execute(config_path, args.data_dir, args.save_dir)
-    
-    elif args.mode == 'eval':
-        from src.cli.commands.eval_command import EvalCommand
-        EvalCommand.execute(args.model_path, args.data_dir, args.save_dir)
-    
-    elif args.mode == 'compare':
-        from src.cli.commands.compare_command import CompareCommand
-        CompareCommand.execute(args.dataset, args.data_dir, args.save_dir)
-    
-    elif args.mode == 'demo':
-        from src.cli.commands.demo_command import DemoCommand
-        DemoCommand.execute()
-    
-    elif args.mode == 'auto_dataset':
-        from src.cli.commands.dataset_command import DatasetCommand
-        DatasetCommand.execute('auto')
-    
-    elif args.mode == 'real_datasets':
-        from src.cli.commands.dataset_command import DatasetCommand
-        DatasetCommand.execute('real')
-    
-    elif args.mode == 'gui':
-        print("🎨 Launching MediSeg.AI Web GUI...")
-        try:
-            from src.gui.launcher import WebGUILauncher
-            launcher = WebGUILauncher()
-            launcher.launch()
-        except ImportError as e:
-            print(f"❌ Failed to import Web GUI: {e}")
-            print("Please install Web GUI dependencies:")
-            print("pip install flask torch opencv-python matplotlib seaborn pillow")
-        except Exception as e:
-            print(f"❌ Failed to start Web GUI: {e}")
-            print("Try running: python web_gui_launcher.py")
+
+        print("🌍 Real Datasets Demo...")
+        from mediseg_ai.data_loaders.real_datasets import main as real_datasets_main
+
+        real_datasets_main()
+        return
+
+    if args.command == "gui":
+        if args.type == "desktop":
+            from backend.gui.desktop.main_window import main as desktop_main
+
+            desktop_main()
+            return
+
+        from backend.gui.web.config import WebGUIConfig
+        from backend.gui.web.launcher import WebGUILauncher
+
+        config = WebGUIConfig.from_env()
+        if args.host is not None:
+            config.host = args.host
+        if args.port is not None:
+            config.port = args.port
+        if args.debug:
+            config.debug = True
+        if args.no_browser:
+            config.auto_open_browser = False
+
+        launcher = WebGUILauncher(config=config)
+        launcher.launch()
+        return
+
+    raise RuntimeError(f"Unknown command: {args.command}")
 
 
 if __name__ == "__main__":

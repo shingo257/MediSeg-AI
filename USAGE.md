@@ -5,33 +5,25 @@
 ### 1. 環境セットアップ
 
 ```bash
-# 仮想環境の作成とアクティブ化
-python -m venv .venv
-.venv\Scripts\activate  # Windows
-# source .venv/bin/activate  # Linux/Mac
-
-# 依存関係のインストール
-pip install -r requirements.txt
+# 依存関係のインストール（uv.lock から再現。activate 不要）
+uv sync --extra dev --extra gui-web
 ```
 
 ### 2. デモ実行
 
 ```bash
 # 基本的なデモを実行
-python main.py --mode demo
+uv run python main.py demo
 ```
 
 ### 3. Web GUIの起動
 
 ```bash
-# Web GUI起動スクリプトを使用（推奨）
-python web_gui_launcher.py
+# main.pyから起動（推奨）
+uv run python main.py gui --type web
 
-# または、main.pyから起動
-python main.py --mode gui
-
-# または、直接web_gui.pyを実行（デバッグモード）
-python -m src.gui.web_gui
+# 直接実行（デバッグ用途）
+uv run python -m backend.gui.web.web_gui
 ```
 
 #### 環境変数による設定
@@ -54,6 +46,12 @@ export MEDISEG_BROWSER_DELAY=5.0
 ```
 
 起動後、ブラウザで `http://localhost:8080` にアクセスしてください。
+
+フロントエンド（Vite）とバックエンド（Flask）を別々に動かす開発手順や、ビルド後の本番相当の動かし方は [docs/FRONTEND_BACKEND.md](docs/FRONTEND_BACKEND.md) を参照してください。
+
+### Google Colab で実行
+
+ブラウザのみでデモ・Web GUI・学習を試す場合は [docs/COLAB.md](docs/COLAB.md) を参照し、[MediSeg_AI_Colab.ipynb](MediSeg_AI_Colab.ipynb) を Colab で開いてください。
 
 ## 📊 データセットの準備
 
@@ -87,21 +85,21 @@ export MEDISEG_BROWSER_DELAY=5.0
 
 ```bash
 # U-Netモデルの訓練
-python main.py --mode train --data_dir data/pascal_voc --save_dir results/pascal_voc
+uv run python main.py train --data-dir data/pascal_voc --save-dir results/pascal_voc
 ```
 
 ### 2. 医療画像での訓練
 
 ```bash
 # ISICデータセットでの訓練
-python main.py --mode train_medical --data_dir data/medical/isic --save_dir results/isic
+uv run python main.py train-medical --data-dir data/medical/isic --save-dir results/isic
 ```
 
 ### 3. カスタム設定での訓練
 
 ```bash
 # カスタム設定ファイルを使用
-python main.py --mode train --config configs/custom_config.yaml --data_dir data/pascal_voc
+uv run python main.py train --config configs/custom_config.yaml --data-dir data/pascal_voc
 ```
 
 ## 📈 モデル評価
@@ -110,14 +108,14 @@ python main.py --mode train --config configs/custom_config.yaml --data_dir data/
 
 ```bash
 # モデルの評価
-python main.py --mode eval --model_path results/best_model.pth --data_dir data/pascal_voc
+uv run python main.py eval --model-path results/best_model.pth --data-dir data/pascal_voc
 ```
 
 ### 2. 可視化付き評価
 
 ```bash
-# 可視化付きで評価
-python src/evaluation/evaluate.py --model_path results/best_model.pth --data_dir data/pascal_voc --visualize
+# 評価（可視化などの詳細は `backend/mediseg_ai/evaluation/evaluate.py` を参照）
+uv run python main.py eval --model-path results/best_model.pth --data-dir data/pascal_voc
 ```
 
 ## 🔍 モデル比較
@@ -126,10 +124,10 @@ python src/evaluation/evaluate.py --model_path results/best_model.pth --data_dir
 
 ```bash
 # Pascal VOC での比較
-python main.py --mode compare --dataset pascal_voc --data_dir data/pascal_voc
+uv run python main.py compare --dataset pascal_voc --data-dir data/pascal_voc
 
 # ISIC での比較
-python main.py --mode compare --dataset isic --data_dir data/medical/isic
+uv run python main.py compare --dataset isic --data-dir data/medical/isic
 ```
 
 ## 📝 設定ファイル
@@ -173,7 +171,7 @@ medical:
 ### 1. 新しいモデルの追加
 
 ```python
-# src/models/new_model.py
+# backend/mediseg_ai/models/new_model.py
 class NewModel(nn.Module):
     def __init__(self, ...):
         # モデル定義
@@ -187,7 +185,7 @@ class NewModel(nn.Module):
 ### 2. 新しいデータセットの追加
 
 ```python
-# src/data_loaders/new_dataset.py
+# backend/mediseg_ai/data_loaders/new_dataset.py
 class NewDataset(Dataset):
     def __init__(self, ...):
         # データセット定義
@@ -201,7 +199,7 @@ class NewDataset(Dataset):
 ### 3. カスタム評価指標の追加
 
 ```python
-# src/evaluation/custom_metrics.py
+# backend/mediseg_ai/evaluation/custom_metrics.py
 def custom_metric(pred, target):
     # カスタム指標の実装
     pass
@@ -240,7 +238,7 @@ data:
 ```bash
 # CPU で実行
 export CUDA_VISIBLE_DEVICES=""
-python main.py --mode demo
+uv run python main.py demo
 ```
 
 ### 3. データセットが見つからない

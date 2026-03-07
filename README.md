@@ -1,5 +1,8 @@
 # MediSeg.AI - 医用画像セグメンテーションAIプロジェクト
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/your-username/MediSeg-AI/blob/main/MediSeg_AI_Colab.ipynb)  
+※ バッジのリンクは `your-username` を実際の GitHub ユーザー名に置き換えてください。フォークした場合は自分のリポジトリURLを指定します。
+
 ## 1. プロジェクト概要
 
 ### 1.1. ビジョン
@@ -29,10 +32,9 @@
 - 実験管理システム（Weights & Biases、TensorBoard）の実装
 - コード品質管理（Black、Flake8、MyPy）の導入
 
-### 2.2. 対象外
-- グラフィカルユーザーインターフェース（GUI）の開発
-- リアルタイム臨床使用のためのデプロイメント
-- WebアプリケーションやAPIの構築
+### 2.2. 対象外（注: Web GUI は提供済み）
+- 当初スコープ外としていた **GUI・Web アプリ・API** については、現在 **Web GUI および REST API を提供**しています。起動方法・API 一覧は [USAGE.md](USAGE.md) および [docs/FRONTEND_BACKEND.md](docs/FRONTEND_BACKEND.md) を参照してください。
+- **リアルタイム臨床使用のためのデプロイメント**は対象外です。
 
 ---
 
@@ -41,10 +43,7 @@
 ### 3.1. コア技術
 - **プログラミング言語**: Python 3.8+
 - **深層学習フレームワーク**: PyTorch, TensorFlow/Keras
-- **GPU環境**: 
-  - **Google Colaboratory（推奨）**: 無料GPU利用可能、Web GUI対応 ✅
-  - **ローカルマシン**: NVIDIA GPU搭載マシン
-  - Colab対応ファイル: `colab_setup.py`, `colab_launcher.py`, `MediSeg_AI_Colab.ipynb`
+- **GPU環境**: Google Colaboratory（推奨）、またはNVIDIA GPU搭載のローカルマシン
 
 ### 3.2. 画像処理・医用画像
 - **画像処理**: OpenCV, Albumentations（データ拡張用）, Scikit-image
@@ -56,7 +55,7 @@
 - **実験管理**: Weights & Biases (wandb), TensorBoard
 - **コード品質**: Black（フォーマッター）, Flake8（リンター）, MyPy（型チェッカー）
 - **テスト**: Pytest
-- **仮想環境**: uv venv（推奨）
+- **仮想環境**: uv venv（推奨）。原則として `uv run` でコマンド実行し、手動の activate は不要
 
 ---
 
@@ -120,34 +119,26 @@ MediSeg-AI/
 │   ├── medical/             # 医療データセット
 │   │   ├── isic/           # ISIC データセット
 │   │   └── brats/          # BraTS データセット
-├── src/                     # ソースコード
-│   ├── models/             # モデル定義
-│   │   ├── unet.py         # U-Net実装
-│   │   └── deeplabv3plus.py # DeepLabV3+実装
-│   ├── data_loaders/       # データローダー
-│   │   ├── pascal_voc.py   # Pascal VOC ローダー
-│   │   └── isic.py         # ISIC ローダー
-│   ├── training/           # 訓練スクリプト
-│   │   ├── trainer.py      # 訓練システム
-│   │   ├── train_unet.py    # U-Net訓練
-│   │   └── compare_models.py # モデル比較
-│   ├── evaluation/         # 評価スクリプト
-│   │   ├── metrics.py      # 評価指標
-│   │   └── evaluate.py     # 評価システム
-│   └── utils/              # ユーティリティ
-│       └── medical_augmentations.py # 医療画像拡張
-├── notebooks/               # Jupyter Notebook
-│   └── 01_getting_started.ipynb
-├── configs/                 # 設定ファイル
-│   ├── base_config.yaml     # 基本設定
-│   └── isic_config.yaml      # 医療画像設定
-├── results/                 # 実験結果
-├── main.py                  # メイン実行スクリプト
-├── requirements.txt         # 依存関係
-├── pyproject.toml          # プロジェクト設定
-├── .gitignore              # Git除外設定
-├── README.md               # プロジェクト説明
-└── USAGE.md                # 使用方法ガイド
+├── backend/                  # バックエンド (Python)
+│   ├── mediseg_ai/          # メインパッケージ
+│   │   ├── models/         # モデル定義
+│   │   │   ├── unet.py     # U-Net実装
+│   │   │   └── deeplabv3plus.py
+│   │   ├── data_loaders/   # データローダー
+│   │   ├── training/       # 訓練スクリプト
+│   │   ├── evaluation/     # 評価スクリプト
+│   │   └── utils/          # ユーティリティ
+│   ├── gui/                 # GUI関連 (Web/Desktop)
+│   └── tests/               # テストコード
+├── frontend/                 # フロントエンド (React/Vite)
+├── notebooks/                # Jupyter Notebook
+├── configs/                  # 設定ファイル
+├── results/                  # 実験結果
+├── main.py                   # メイン実行スクリプト
+├── pyproject.toml           # プロジェクト設定
+├── .gitignore               # Git除外設定
+├── README.md                # プロジェクト説明
+└── USAGE.md                 # 使用方法ガイド
 ```
 
 ---
@@ -156,22 +147,23 @@ MediSeg-AI/
 
 ### 7.1. 環境構築
 ```bash
-# 仮想環境の作成とアクティブ化
-python -m venv .venv
-.venv\Scripts\activate  # Windows
-# source .venv/bin/activate  # Linux/Mac
+# 仮想環境（任意）: uv venv で作成可能。uv run は自動で .venv を利用するため activate 不要
+uv venv
 
-# 依存関係のインストール
-pip install -r requirements.txt
+# 依存関係のインストール（uv.lock から再現。開発・Web GUI 用は --extra を指定）
+uv sync --extra dev --extra gui-web
+
+# 実行はアクティベート不要
+uv run python main.py demo
 ```
 
 ### 7.2. クイックスタート
 ```bash
 # デモ実行（データセット不要）
-python main.py --mode demo
+uv run python main.py demo
 
 # 実際の訓練（データセット準備後）
-python main.py --mode train --data_dir data/pascal_voc
+uv run python main.py train --data-dir data/pascal_voc
 ```
 
 ### 7.3. 主要依存関係
@@ -209,44 +201,20 @@ python main.py --mode train --data_dir data/pascal_voc
 #### クイックスタート
 ```bash
 # デモ実行
-python main.py --mode demo
+uv run python main.py demo
 
 # Pascal VOC での訓練
-python main.py --mode train --data_dir data/pascal_voc
+uv run python main.py train --data-dir data/pascal_voc
 
 # 医療画像での訓練
-python main.py --mode train_medical --data_dir data/medical/isic
+uv run python main.py train-medical --data-dir data/medical/isic
 
 # モデル比較
-python main.py --mode compare --dataset pascal_voc --data_dir data/pascal_voc
+uv run python main.py compare --dataset pascal_voc --data-dir data/pascal_voc
 ```
 
 #### 詳細な使用方法
-詳細な使用方法については [USAGE.md](USAGE.md) を参照してください。
-
-#### Google Colaboratoryでの実行（無料GPU利用）
-Google Colaboratoryの無料枠で実行する場合：
-
-1. **Colabノートブックを使用**:
-   - `MediSeg_AI_Colab.ipynb`をGoogle Colaboratoryで開く
-   - セルを順番に実行
-
-2. **手動セットアップ**:
-```python
-# リポジトリのクローン
-!git clone https://github.com/your-username/MediSeg-AI.git /content/MediSeg-AI
-
-# セットアップ
-import os
-os.chdir('/content/MediSeg-AI')
-!python colab_setup.py
-
-# Web GUIの起動
-from colab_launcher import launch_web_gui
-launch_web_gui()
-```
-
-詳細は [COLAB_GUIDE.md](COLAB_GUIDE.md) を参照してください。
+詳細な使用方法については [USAGE.md](USAGE.md) を参照してください。フロントエンドとバックエンドの連携（開発/本番の動かし方）は [docs/FRONTEND_BACKEND.md](docs/FRONTEND_BACKEND.md) を参照してください。
 
 ---
 
@@ -259,9 +227,11 @@ launch_web_gui()
 
 ### 9.2. 次のステップ
 1. **データセットのダウンロード**: Pascal VOC 2012、ISIC
-2. **仮想環境のセットアップ**: `pip install -r requirements.txt`
-3. **デモの実行**: `python main.py --mode demo`
-4. **実際の訓練**: データセット準備後に訓練開始
+2. **依存のインストール**: `uv sync`（必要に応じて `uv sync --extra dev --extra gui-web`）
+3. **デモの実行**: `uv run python main.py demo`
+4. **実際の訓練**: データセット準備後に `uv run python main.py train ...` で訓練開始
+5. **Google Colab で実行**: [docs/COLAB.md](docs/COLAB.md) を参照し、[MediSeg_AI_Colab.ipynb](MediSeg_AI_Colab.ipynb) を Colab で開く。**Colab で学習する手順**は [docs/COLAB_TRAINING_GUIDE.md](docs/COLAB_TRAINING_GUIDE.md) を参照
+6. **学習環境のコスト比較**（手持ちPC vs クラウド）: [docs/TRAINING_COST_COMPARISON.md](docs/TRAINING_COST_COMPARISON.md)
 
 ### 9.3. 技術的成果
 - **完全なセグメンテーションパイプライン**: データローダーから評価まで

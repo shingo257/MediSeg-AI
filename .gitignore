@@ -57,6 +57,7 @@ results/*
 # Logs
 logs/
 *.log
+gui_log.txt
 wandb/
 tensorboard/
 

@@ -9,13 +9,13 @@ MediSeg.AIでは、手元にデータがない場合でも、無料のデータ�
 ### 1. 自動データセット（合成データ）
 ```bash
 # 合成医療画像データセットを生成・読み込み
-python main.py --mode auto_dataset
+python main.py datasets auto
 ```
 
 ### 2. 実世界データセット
 ```bash
 # 実世界データセットの一覧表示・ダウンロード
-python main.py --mode real_datasets
+python main.py datasets real
 ```
 
 ## 📊 利用可能なデータセット
@@ -75,7 +75,7 @@ python main.py --mode real_datasets
 
 ### 基本的な使用方法
 ```python
-from src.data_loaders.auto_dataset import create_auto_dataloaders
+from mediseg_ai.data_loaders.auto_dataset import create_auto_dataloaders
 
 # 合成医療データセットを読み込み
 dataloader, dataset = create_auto_dataloaders(
@@ -91,7 +91,7 @@ for batch_idx, (images, masks) in enumerate(dataloader):
 
 ### 実世界データセットの使用
 ```python
-from src.data_loaders.real_datasets import RealDatasetDownloader
+from mediseg_ai.data_loaders.real_datasets import RealDatasetDownloader
 
 # ダウンローダーを作成
 downloader = RealDatasetDownloader()

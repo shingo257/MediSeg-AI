@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: uv sync --extra dev --extra gui-web
+
+      - name: Run tests
+        run: uv run pytest backend/tests -v --tb=short --cov=mediseg_ai --cov-report=term-missing
+
+  lint:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: uv sync --extra dev
+
+      - name: Flake8
+        run: uv run flake8 backend/mediseg_ai backend/gui backend/tests --max-line-length=120 --extend-ignore=E203,W503 --count
+
+      - name: Mypy
+        run: uv run mypy backend/mediseg_ai --no-error-summary
+        continue-on-error: true
