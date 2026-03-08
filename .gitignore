@@ -38,6 +38,8 @@ env/
 .vscode/
 
 # Data files
+data/archive.zip
+data/BraTS2020_TrainingData/
 data/pascal_voc/*
 data/medical/isic/*
 data/medical/brats/*
