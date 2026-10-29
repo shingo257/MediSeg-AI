@@ -4,7 +4,7 @@
   "description": "MediSeg.AI - Modern Web Frontend",
   "main": "index.js",
   "engines": {
-    "node": ">=22.23.4 <23 || >=24.22.1"
+    "node": ">=22.23.4 <23 || >=24.22.1 <25 || >=26.12.1"
   },
   "scripts": {
     "dev": "vite",
