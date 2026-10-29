@@ -27,7 +27,7 @@ import {
   TextFields as TextFieldsIcon,
   Language as LanguageIcon,
   Keyboard as KeyboardIcon,
-  ScreenReader as ScreenReaderIcon,
+  RecordVoiceOver as ScreenReaderIcon,
 } from '@mui/icons-material'
 import { motion } from 'framer-motion'
 import { useAccessibility } from './AccessibilityProvider'
